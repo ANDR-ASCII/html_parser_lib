@@ -1,4 +1,5 @@
 #include "headers.h"
+#include "attribute.h"
 #include "tag.h"
 #include "common.h"
 
@@ -20,25 +21,25 @@ const std::deque<HtmlParser::Attribute>& Tag::allAttributes() const
 	return m_attributes;
 }
 
-// returns value of attribute
-// empty string if occurs error
-const std::string Tag::attribute(const std::string &nameAttribute) const
+const std::string Tag::attribute(const std::string& nameAttribute) const
 {
 	if (nameAttribute.empty())
 	{
-		return "";
+		throw std::invalid_argument("Empty argument");
 	}
 
-	int countAttrs = m_attributes.size();
-	for (int i = 0; i < countAttrs; i++)
+	const std::size_t attributesNumber = m_attributes.size();
+
+	for (std::size_t i = 0; i < attributesNumber; i++)
 	{
-		if (Common::strToLower(m_attributes[i].name()) == Common::strToLower(nameAttribute))
+		if (Common::strToLower(m_attributes[i].name()) == 
+			Common::strToLower(nameAttribute))
 		{
 			return m_attributes[i].value();
 		}
 	}
 
-	return "";
+	return std::string();
 }
 
 void Tag::setName(const std::string& setTagName)

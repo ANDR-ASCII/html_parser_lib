@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(BIN html_parser)
+set(BIN html_parser_lib)
 project(${BIN})
 
 set(HEADERS_DIR ./)
