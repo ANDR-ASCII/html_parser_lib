@@ -15,8 +15,8 @@ public:
 	const std::deque<Attribute>& allAttributes() const;
 	
 	//
-	// throws exception if error
-	// returns empty value if specified attribute name not found
+	//! throws exception if error
+	//! returns empty value if specified attribute name not found
 	//
 	const std::string attribute(const std::string& nameAttribute) const;
 

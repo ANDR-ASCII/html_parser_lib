@@ -27,6 +27,36 @@ TagParser::TagParser(const TagParser& parser)
 	}
 }
 
+TagParser::iterator TagParser::begin()
+{
+	return m_tags.begin();
+}
+
+TagParser::iterator TagParser::end()
+{
+	return m_tags.end();
+}
+
+TagParser::const_iterator TagParser::begin() const
+{
+	return m_tags.begin();
+}
+
+TagParser::const_iterator TagParser::end() const
+{
+	return m_tags.end();
+}
+
+TagParser::const_iterator TagParser::cbegin() const
+{
+	return m_tags.cbegin();
+}
+
+TagParser::const_iterator TagParser::cend() const
+{
+	return m_tags.cend();
+}
+
 TagParser& TagParser::operator=(const TagParser& parser)
 {
 	if (this == &parser)
@@ -47,7 +77,7 @@ TagParser& TagParser::operator=(const TagParser& parser)
 	return *this;
 }
 
-void TagParser::parseByTags(const std::string& htmlPage)
+void TagParser::parsePageByTags(const std::string& htmlPage)
 {
 	D_FUNCTION(TagParser);
 
@@ -92,32 +122,32 @@ void TagParser::parseByTags(const std::string& htmlPage)
 }
 
 // parse specified tags from first argument
-void TagParser::parseTags(const std::string &xmlPage, const std::string &nameTag, bool parseAttributes)
+void TagParser::parseTags(const std::string& htmlPage, const std::string& tagName, bool parseAttributes)
 {
 	D_FUNCTION(TagParser);
 
 	testInviteMode();
 
-	if (nameTag.empty() || xmlPage.empty() || nameTag == "!--")
+	if (tagName.empty() || htmlPage.empty() || tagName == "!--")
 	{
 		return;
 	}
 
-	decltype(xmlPage.size()) position = 0, size = xmlPage.size();
+	decltype(htmlPage.size()) position = 0, size = htmlPage.size();
 
 	// text of read the tag like this - tag [attribute1="value1" attribute2="value2"]
 	std::string tagText;
 	std::deque<Attribute> attributesOfNameTag;
 
 	// name of current read tag
-	std::string nameOfReadedTag, nameTagCmp = Common::strToLower(nameTag);
+	std::string nameOfReadedTag, nameTagCmp = Common::strToLower(tagName);
 
 
 	while (position < size)
 	{
 		// initializing object of Tag
 		Tag tmpTag;
-		tagText = m_d->readTag(xmlPage, position);
+		tagText = m_d->readTag(htmlPage, position);
 
 		// if find the specified tag, write it
 		if (Common::strToLower(m_d->tagName(tagText)) == nameTagCmp)
@@ -136,26 +166,26 @@ void TagParser::parseTags(const std::string &xmlPage, const std::string &nameTag
 }
 
 // parse specified tags with value from first argument
-void TagParser::parseTagsWithValue(const std::string &xmlPage, const std::string &nameTag, bool parseAttributes)
+void TagParser::parseTagsWithValue(const std::string& htmlPage, const std::string& tagName, bool parseAttributes)
 {
 	D_FUNCTION(TagParser);
 
 	testInviteMode();
 
-	if (nameTag.empty() || xmlPage.empty() || nameTag == "!--")
+	if (tagName.empty() || htmlPage.empty() || tagName == "!--")
 	{
 		return;
 	}
 
-	std::size_t position = 0, size = xmlPage.size();
+	std::size_t position = 0, size = htmlPage.size();
 
-	std::string tagText, nameTagCmp = Common::strToLower(nameTag);
+	std::string tagText, nameTagCmp = Common::strToLower(tagName);
 	std::deque<Attribute> attributesOfNameTag;
 
 	while (position < size)
 	{
 		Tag tmpTag;
-		tagText = m_d->readTag(xmlPage, position);
+		tagText = m_d->readTag(htmlPage, position);
 
 		if (Common::strToLower(m_d->tagName(tagText)) == nameTagCmp)
 		{
@@ -167,16 +197,16 @@ void TagParser::parseTagsWithValue(const std::string &xmlPage, const std::string
 				tmpTag.setAttributes(m_d->readAllTagAttributes(tagText));
 			}
 
-			tmpTag.setValue(m_d->readAllUpToTag(xmlPage, "/" + m_d->tagName(tagText), position));
+			tmpTag.setValue(m_d->readAllUpToTag(htmlPage, "/" + m_d->tagName(tagText), position));
 
 			m_tags.push_back(tmpTag);
 		}
 	}
 }
 
-Tag const& TagParser::operator[](size_type i) const
+Tag const& TagParser::operator[](std::size_t i) const
 {
-	size_type countTags = m_tags.size();
+	std::size_t countTags = m_tags.size();
 
 	if (i > countTags || !countTags)
 	{
@@ -186,13 +216,18 @@ Tag const& TagParser::operator[](size_type i) const
 	return m_tags[i];
 }
 
-TagParser::size_type TagParser::countTag(const std::string &tag) const
+std::size_t TagParser::size() const
 {
-	size_type number = count(), numberOfTagsFound = 0;
+	return m_tags.size();
+}
+
+std::size_t TagParser::countTag(const std::string& tag) const
+{
+	std::size_t number = size(), numberOfTagsFound = 0;
 
 	if (number > 0)
 	{
-		for (size_type i = 0; i < number; ++i)
+		for (std::size_t i = 0; i < number; ++i)
 		{
 			if (m_tags[i].name() == tag)
 			{

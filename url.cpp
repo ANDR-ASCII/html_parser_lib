@@ -93,7 +93,7 @@ Url::operator bool() const
 }
 
 // true if links equivalents
-bool Url::operator==(const Url &other) const
+bool Url::operator==(const Url& other) const
 {
 	if (&other == this)
 	{
@@ -110,35 +110,31 @@ bool Url::operator==(const Url &other) const
 		}
 
 		// compare variables
-		//================================================================
-		auto size = m_variables.size();
-		for (decltype(size) i = 0; i < size; ++i)
+		std::size_t variablesNumber = m_variables.size();
+
+		for (std::size_t i = 0; i < variablesNumber; ++i)
 		{
-			for (decltype(size) j = 0; j < size; ++j)
+			for (std::size_t j = 0; j < variablesNumber; ++j)
 			{
-				// if names of variables or his values not equal => false
 				if (m_variables[i].first == other.m_variables[j].first)
 				{
 					if (m_variables[i].second == other.m_variables[j].second)
 					{
 						break;
 					}
-					// values not equal
 					else
 					{
 						return false;
 					}
 				}
 
-				// variable not found
-				if (j == size - 1)
+				if (j == variablesNumber - 1)
 				{
 					return false;
 				}
-			} // if exit from internal cycle => variable founded and them values equal
+			}
 
 		}
-		//================================================================
 
 		return true;
 	}
