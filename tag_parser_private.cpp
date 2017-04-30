@@ -33,6 +33,24 @@ const std::string TagParserPrivate::s_singleTags[] =
 
 const std::size_t TagParserPrivate::s_singleTagsNumber = sizeof(s_singleTags) / sizeof(s_singleTags[0]);
 
+const std::size_t TagParserPrivate::s_lowestStartAttributeNamePosition = 2;
+
+const std::string TagParserPrivate::s_openHtmlCommentaryTagName = "!--";
+
+const std::string TagParserPrivate::s_closeHtmlCommentaryTag = "-->";
+
+const char TagParserPrivate::s_equalCharacter = '=';
+
+const char TagParserPrivate::s_openTagCharacter = '<';
+
+const char TagParserPrivate::s_closeTagCharacter = '>';
+
+const char TagParserPrivate::s_doubleQuoteCharacter = '"';
+
+const char TagParserPrivate::s_singleQuoteCharacter = '\'';
+
+const char TagParserPrivate::s_newLineCharacter = '\n';
+
 /*********************************************************************************************************/
 
 void TagParserPrivate::skipWhitespaces(const std::string& str, std::size_t& position) const
@@ -50,9 +68,9 @@ void TagParserPrivate::skipWhitespaces(const std::string& str, std::size_t& posi
 	position = idx;
 }
 
-bool TagParserPrivate::isDoubleQuotes(char ch) const
+bool TagParserPrivate::isDoubleQuote(char ch) const
 {
-	if (ch == static_cast<char>(Symbols::DoubleQuotes))
+	if (ch == s_doubleQuoteCharacter)
 	{
 		return true;
 	}
@@ -62,7 +80,7 @@ bool TagParserPrivate::isDoubleQuotes(char ch) const
 
 bool TagParserPrivate::isSingleQuote(char ch) const
 {
-	if (ch == static_cast<char>(Symbols::SingleQuote))
+	if (ch == s_singleQuoteCharacter)
 	{
 		return true;
 	}
@@ -72,7 +90,7 @@ bool TagParserPrivate::isSingleQuote(char ch) const
 
 bool TagParserPrivate::isEqualCharacter(char ch) const
 {
-	if (ch == static_cast<char>(Symbols::Equally))
+	if (ch == s_equalCharacter)
 	{
 		return true;
 	}
@@ -82,7 +100,7 @@ bool TagParserPrivate::isEqualCharacter(char ch) const
 
 bool TagParserPrivate::isOpenTag(char ch) const
 {
-	if (ch == static_cast<char>(Symbols::OpenTag))
+	if (ch == s_openTagCharacter)
 	{
 		return true;
 	}
@@ -92,7 +110,7 @@ bool TagParserPrivate::isOpenTag(char ch) const
 
 bool TagParserPrivate::isCloseTag(char ch) const
 {
-	if (ch == static_cast<char>(Symbols::CloseTag))
+	if (ch == s_closeTagCharacter)
 	{
 		return true;
 	}
@@ -102,13 +120,16 @@ bool TagParserPrivate::isCloseTag(char ch) const
 
 bool TagParserPrivate::isNewLine(char ch) const
 {
-	if (ch == static_cast<char>(Symbols::NewLine))
+	if (ch == s_newLineCharacter)
 	{
 		return true;
 	}
 
 	return false;
 }
+
+#pragma warning(push)
+#pragma warning(disable: 4800)
 
 bool TagParserPrivate::isSpace(char ch) const
 {
@@ -125,99 +146,67 @@ bool TagParserPrivate::isAlnum(char ch) const
 	return std::isalnum(static_cast<unsigned char>(ch));
 }
 
-bool TagParserPrivate::skippedCommentaryTag(const std::string& htmlPage, std::size_t& position) const
+#pragma warning(pop)
+
+void TagParserPrivate::skipCommentaryTag(const std::string& htmlPage, std::size_t& position) const
 {
-	const auto size = htmlPage.size();
-	std::string isEndCommentTag;
-
-	if (isCommentaryTag(htmlPage, position))
+	if (!isCommentaryTag(htmlPage, position))
 	{
-		// shifts pointer to the open tag character of commentary tag
-		position += 3;
-
-		while (position < size)
-		{
-			// if find character '-', write it and two next characters
-			if (htmlPage[position] == '-')
-			{
-				isEndCommentTag  = htmlPage[position];
-				isEndCommentTag += htmlPage[position + 1];
-				isEndCommentTag += htmlPage[position + 2];
-
-				// shifts ptr of the character close tag and return result
-				if (isEndCommentTag == "-->")
-				{
-					position += 3;
-					return true;
-				}
-				else
-				{
-					isEndCommentTag.clear();
-				}
-			}
-
-			++position;
-		}
+		return;
 	}
 
-	return false;
-}
+	position += s_openHtmlCommentaryTagName.size();
+	const std::size_t closeCommentaryTagPosition = htmlPage.find(s_closeHtmlCommentaryTag, position);
 
+	position = closeCommentaryTagPosition != std::string::npos ? closeCommentaryTagPosition + s_closeHtmlCommentaryTag.size() :
+		throw std::logic_error("Cannot find closed commentary tag");
+}	
+	
 bool TagParserPrivate::isCommentaryTag(const std::string& htmlPage, std::size_t& position) const
 {
 	if (position > htmlPage.size() || htmlPage.empty())
 	{
-		return false;
+		throw std::invalid_argument("Empty argument or position greater than size of string");
 	}
 
-	if (htmlPage[position] == '!' && htmlPage[position + 1] == '-' && htmlPage[position + 2] == '-')
+	if (htmlPage.find(s_openHtmlCommentaryTagName, position) != std::string::npos)
 	{
 		return true;
 	}
-
+	
 	return false;
-}
-
+}	
+	
 std::string TagParserPrivate::readTag(const std::string& htmlPage, std::size_t& position) const
-{
-	const auto size = htmlPage.size();
-	std::string tag;
+{	
+	const std::size_t openTagCharacterPosition = htmlPage.find(s_openTagCharacter, position);
 
-	while (position < size)
+	if (openTagCharacterPosition == std::string::npos)
 	{
-		// if found character of open tag
-		if (isOpenTag(htmlPage[position++]))
-		{
-			if (skippedCommentaryTag(htmlPage, position))
-			{
-				//
-				// skip the iteration of cycle after ignore commentary tag
-				// otherwise: <!-- some text --><sometag> - sometag cannot be read
-				// because the next iteration of cycle attempts to write the name of tag and the result "<nameTag"
-				// and after that function tagName returns empty string.
-				//
-				continue;
-			}
-
-			// write all characters up to the first character of close tag.
-			while (position < size && !isCloseTag(htmlPage[position]))
-			{
-				tag += htmlPage[position++];
-			}
-
-			// skip character ">"
-			++position;
-			break;
-		}
+		return std::string();
 	}
 
-	return tag;
+	const std::size_t closeTagCharacterPosition = htmlPage.find(s_closeTagCharacter, openTagCharacterPosition);
+
+	if (closeTagCharacterPosition == std::string::npos)
+	{
+		throw std::logic_error("Cannot find close tag character position");
+	}
+
+	// move pointer to the next character after close tag character position
+	position = closeTagCharacterPosition + 1;
+
+	// +1 for ignoring '<' character
+	return htmlPage.substr(openTagCharacterPosition + 1, closeTagCharacterPosition - openTagCharacterPosition - 1);
 }
 
+//
+// TODO: refactor
+//
 std::string TagParserPrivate::readValue(const std::string& htmlPage, std::size_t& position) const
 {
 	std::string value;
-	const auto size = htmlPage.size();
+	const std::size_t size = htmlPage.size();
 
 	while (position < size)
 	{
@@ -234,6 +223,9 @@ std::string TagParserPrivate::readValue(const std::string& htmlPage, std::size_t
 	return value;
 }
 
+//
+// TODO: refactor
+//
 std::string TagParserPrivate::readAllUpToTag(const std::string& htmlPage, const std::string& tag, std::size_t& position) const
 {
 	std::string value = readValue(htmlPage, position);
@@ -243,7 +235,7 @@ std::string TagParserPrivate::readAllUpToTag(const std::string& htmlPage, const 
 
 	while (position < size && tagName(currentTagName) != Common::strToLower(tag))
 	{
-		currentTagName = static_cast<char>(Symbols::OpenTag) + currentTagName + static_cast<char>(Symbols::CloseTag);
+		currentTagName = s_openTagCharacter + currentTagName + s_closeTagCharacter;
 		value += currentTagName;
 
 		value += readValue(htmlPage, position);
@@ -253,12 +245,9 @@ std::string TagParserPrivate::readAllUpToTag(const std::string& htmlPage, const 
 	return value;
 }
 
-//
-// TODO: refactor
-//
 std::string TagParserPrivate::attributeOfTag(const std::string& tagString, const std::string& attribute) const
 {
-	const std::string::size_type idx = isSetTagAttribute(tagString, attribute);
+	const std::size_t idx = isSetTagAttribute(tagString, attribute);
 
 	const bool isArgumentInvalid = tagString.empty() || attribute.empty();
 	const bool isAttributeFound = idx != std::string::npos;
@@ -272,97 +261,60 @@ std::string TagParserPrivate::attributeOfTag(const std::string& tagString, const
 
 	if (isAttributeFound)
 	{
-		const int attributeLength = attribute.size();
-		const int lastCharacterAttributeNamePosition = idx + attributeLength;
-		const int tagStringLength = tagString.size();
+		const std::size_t attributeLength = attribute.size();
+		const std::size_t lastCharacterAttributeNamePosition = idx + attributeLength;
+		const std::size_t tagStringLength = tagString.size();
 
-		int equalCharacterPosition = 0;
+		std::size_t idx = lastCharacterAttributeNamePosition;
 
-		// skip all the characters up to the first whitespace
-		for (int i = lastCharacterAttributeNamePosition; i < tagStringLength; ++i)
+		skipWhitespaces(tagString, idx);
+
+		//
+		// check validity of HTML attribute syntax
+		// and increment position to the next character
+		// which is should be alphabetical character or 
+		// single/double quotes character
+		//
+		if (!isEqualCharacter(tagString[idx++]))
 		{
-			if (isSpace(tagString[i]))
-			{
-				continue;
-			}
-			else if(!isEqualCharacter(tagString[i]))
-			{
-				throw std::logic_error("Before character '=' appeared character which is not a whitespace");
-			}
-			else
-			{
-				equalCharacterPosition = i;
-				break;
-			}
+			throw std::logic_error("Tag string do not contain '=' character after attribute name");
 		}
 
-		int quotesCharacterPosition = 0;
-		bool attributeValueQuoted = false;
+		skipWhitespaces(tagString, idx);
 
-		// skip all characters up to the first quotes
-		for (int i = equalCharacterPosition + 1; i < tagStringLength; ++i)
+		if (!(isDoubleQuote(tagString[idx]) || isSingleQuote(tagString[idx])))
 		{
-			if (isSpace(tagString[i]))
-			{
-				continue;
-			}
-			else
-			{
-				if (isDoubleQuotes(tagString[i]) || isSingleQuote(tagString[i]))
-				{
-					quotesCharacterPosition = i;
-					attributeValueQuoted = true;
-				}
+			attributeValue = readUntil(tagString, idx, [this](char ch) { return !isSpace(ch); });
+		}
+		else
+		{
+			//**
+			//***********************************************************************************************************
+			//**
 
-				break;
-			}
+			// I seem this is a bad style programming
+			// but I suppose this code will see only am I
+
+			using checkCharacterFunctionTypePointer = bool(TagParserPrivate::*)(char) const;
+
+			checkCharacterFunctionTypePointer checkQuotesFunction = isDoubleQuote(tagString[idx]) ?
+				&TagParserPrivate::isDoubleQuote : &TagParserPrivate::isSingleQuote;
+
+			//**
+			//***********************************************************************************************************
+			//**
+
+			attributeValue = readUntil(tagString, ++idx,
+				[this, checkQuotesFunction](char ch) { return !(this->*checkQuotesFunction)(ch); });
 		}
 
-		//**
-		//***********************************************************************************************************
-		//**
-
-		// I seem this is a bad style programming
-		// but I suppose this code will see only am I
-
-		using checkCharacterFunctionTypePointer = bool(TagParserPrivate::*)(char) const;
-
-		checkCharacterFunctionTypePointer checkQuotesFunction = isDoubleQuotes(tagString[quotesCharacterPosition]) ?
-			&TagParserPrivate::isDoubleQuotes : &TagParserPrivate::isSingleQuote;
-
-		//**
-		//***********************************************************************************************************
-		//**
-
-		// if found quotes then write all after it up to the first quotes character
-
-		bool attributeValueClosedByQuotes = false;
-
-		for (int i = quotesCharacterPosition + 1; i < tagStringLength; ++i)
-		{
-			if (attributeValueQuoted && !(this->*checkQuotesFunction)(tagString[i]) ||
-				!attributeValueQuoted && !isSpace(tagString[i]))
-			{
-				attributeValue += tagString[i];
-			}
-			else
-			{
-				attributeValueClosedByQuotes = attributeValueQuoted;
-				break;
-			}
-		}
-
-		return !attributeValueClosedByQuotes && attributeValueQuoted ?
-			throw std::logic_error("Attribute value must be closed by quotes") : attributeValue;
+		return attributeValue;
 	}
 
 	// attribute not found
 	return std::string();
 }
 
-//
-// TODO: check validity
-//
 std::string TagParserPrivate::tagName(const std::string& tagString) const
 {
 	const std::size_t size = tagString.size();
@@ -377,14 +329,15 @@ std::string TagParserPrivate::tagName(const std::string& tagString) const
 	return readUntil(tagString, position, [this](char ch) { return !isSpace(ch); });
 }
 
-//
-// TODO: refactor
-//
-std::string::size_type TagParserPrivate::isSetTagAttribute(const std::string& tagString, const std::string& attribute) const
+std::size_t TagParserPrivate::isSetTagAttribute(const std::string& tagString, const std::string& attribute) const
 {
-	const auto idx = tagString.find(attribute);
+	const std::size_t idx = tagString.find(attribute);
 
-	return idx != std::string::npos && idx >= 2 && isSpace(tagString[idx - 1]) ? idx : std::string::npos;
+	const bool isAttributeFindAndPositionCorrect = std::string::npos &&
+		idx >= s_lowestStartAttributeNamePosition &&
+		isSpace(tagString[idx - 1]);
+
+	return isAttributeFindAndPositionCorrect ? idx : std::string::npos;
 }
 
 std::deque<Attribute> TagParserPrivate::readAllTagAttributes(const std::string& tagString) const
@@ -423,7 +376,7 @@ std::deque<Attribute> TagParserPrivate::readAllTagAttributes(const std::string& 
 
 			skipWhitespaces(tagString, idx);
 
-			if (!(isDoubleQuotes(tagString[idx]) || isSingleQuote(tagString[idx])))
+			if (!(isDoubleQuote(tagString[idx]) || isSingleQuote(tagString[idx])))
 			{
 				attribute.setValue(readUntil(tagString, idx, [this](char ch) { return !isSpace(ch); }));
 			}
@@ -438,8 +391,8 @@ std::deque<Attribute> TagParserPrivate::readAllTagAttributes(const std::string& 
 
 				using checkCharacterFunctionTypePointer = bool(TagParserPrivate::*)(char) const;
 
-				checkCharacterFunctionTypePointer checkQuotesFunction = isDoubleQuotes(tagString[idx]) ?
-					&TagParserPrivate::isDoubleQuotes : &TagParserPrivate::isSingleQuote;
+				checkCharacterFunctionTypePointer checkQuotesFunction = isDoubleQuote(tagString[idx]) ?
+					&TagParserPrivate::isDoubleQuote : &TagParserPrivate::isSingleQuote;
 
 				//**
 				//***********************************************************************************************************
@@ -465,7 +418,7 @@ std::deque<Attribute> TagParserPrivate::readAllTagAttributes(const std::string& 
 //
 bool TagParserPrivate::isSetTagAttributes(const std::string& tagString) const
 {
-	const auto idx = tagString.find(static_cast<char>(Symbols::Equally));
+	const std::size_t idx = tagString.find(s_equalCharacter);
 	auto i = 0ul;
 
 	if (idx != std::string::npos)
@@ -497,7 +450,7 @@ bool TagParserPrivate::isSetTagAttributes(const std::string& tagString) const
 			i = idx + 1;
 
 			// if after = meet " or ' or letter/digit, return true
-			if (isDoubleQuotes(tagString[i]) || isSingleQuote(tagString[i]) || isAlnum(tagString[i]))
+			if (isDoubleQuote(tagString[i]) || isSingleQuote(tagString[i]) || isAlnum(tagString[i]))
 			{
 				return true;
 			}
@@ -509,7 +462,7 @@ bool TagParserPrivate::isSetTagAttributes(const std::string& tagString) const
 			} while (isSpace(tagString[i]) && i > 0);
 
 			// if find double or single quotes or letter/digit, return true
-			if (isDoubleQuotes(tagString[i]) || isSingleQuote(tagString[i]) || isAlnum(tagString[i]))
+			if (isDoubleQuote(tagString[i]) || isSingleQuote(tagString[i]) || isAlnum(tagString[i]))
 			{
 				return true;
 			}

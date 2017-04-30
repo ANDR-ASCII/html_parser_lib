@@ -1,14 +1,14 @@
 #pragma once
 
 #include "headers.h"
-#include "tag.h"
 
 namespace HtmlParser
 {
 
+class Tag;
 class TagParserPrivate;
 
-class TagParser
+class HTML_PARSER_EXPORT TagParser
 {
 public:
 	using iterator = std::deque<Tag>::iterator;

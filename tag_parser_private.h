@@ -9,55 +9,23 @@ class Attribute;
 
 class TagParserPrivate
 {
-	static const std::string s_singleTags[];
-	static const std::size_t s_singleTagsNumber;
-
-	enum class Symbols
-	{
-		Equally = '=',
-		OpenTag = '<',
-		CloseTag = '>',
-		DoubleQuotes = '\"',
-		SingleQuote = '\'',
-		NewLine = '\n'
-	};
-
-	void skipWhitespaces(const std::string& str, std::size_t& position) const;
-
-	template <typename Pred>
-	std::string readUntil(const std::string& str, std::size_t& position, Pred p) const
-	{
-		const std::size_t stringLength = str.size();
-
-		std::size_t idx = position;
-		std::string accumulator;
-
-		for (; idx < stringLength; ++idx)
-		{
-			if (p(str[idx]))
-			{
-				accumulator += str[idx];
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		position = idx;
-
-		return accumulator;
-	}
-
 public:
-	bool isDoubleQuotes(char ch) const;
+	bool isDoubleQuote(char ch) const;
+
 	bool isSingleQuote(char ch) const;
+
 	bool isEqualCharacter(char ch) const;
+
 	bool isOpenTag(char ch) const;
+
 	bool isCloseTag(char ch) const;
+
 	bool isNewLine(char ch) const;
+
 	bool isSpace(char ch) const;
+
 	bool isAlpha(char ch) const;
+
 	bool isAlnum(char ch) const;
 
 	bool isSetTagAttributes(const std::string& tagString) const;
@@ -67,7 +35,7 @@ public:
 	std::string::size_type isSetTagAttribute(const std::string& tagString, const std::string& attribute) const;
 
 	// moves the pointer to the comment tag
-	bool skippedCommentaryTag(const std::string& htmlPage, std::size_t& position) const;
+	void skipCommentaryTag(const std::string& htmlPage, std::size_t& position) const;
 
 	// true if the text starting at position "position" occurs characters !--
 	bool isCommentaryTag(const std::string& htmlPage, std::size_t& position) const;
@@ -97,7 +65,48 @@ public:
 	// reads all attributes of passed tag and returns vector of attributes
 	// expects string like this: (tagname [attribute1="value1" attribute2="value2"])
 	// attributes can be any number
-	std::deque<HtmlParser::Attribute> readAllTagAttributes(const std::string& tagString) const;
+	std::deque<Attribute> readAllTagAttributes(const std::string& tagString) const;
+
+private:
+	static const std::string s_singleTags[];
+	static const std::size_t s_singleTagsNumber;
+	static const std::size_t s_lowestStartAttributeNamePosition;
+	static const std::string s_openHtmlCommentaryTagName;
+	static const std::string s_closeHtmlCommentaryTag;
+	static const char s_equalCharacter;
+	static const char s_openTagCharacter;
+	static const char s_closeTagCharacter;
+	static const char s_doubleQuoteCharacter;
+	static const char s_singleQuoteCharacter;
+	static const char s_newLineCharacter;
+
+private:
+	void skipWhitespaces(const std::string& str, std::size_t& position) const;
+
+	template <typename Pred>
+	std::string readUntil(const std::string& str, std::size_t& position, Pred p) const
+	{
+		const std::size_t stringLength = str.size();
+
+		std::size_t idx = position;
+		std::string accumulator;
+
+		for (; idx < stringLength; ++idx)
+		{
+			if (p(str[idx]))
+			{
+				accumulator += str[idx];
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		position = idx;
+
+		return accumulator;
+	}
 };
 
 }

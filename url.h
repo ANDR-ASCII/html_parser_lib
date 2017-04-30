@@ -59,7 +59,7 @@ namespace HtmlParser
      *
      */
 
-    class exErrorUrl : public std::runtime_error
+    class HTML_PARSER_EXPORT exErrorUrl : public std::runtime_error
     {
         std::string badUrl_;
     public:
@@ -85,7 +85,7 @@ namespace HtmlParser
     };
 
 
-	class Url
+	class HTML_PARSER_EXPORT Url
 	{
     public:
         enum class FileType

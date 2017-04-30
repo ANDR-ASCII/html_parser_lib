@@ -5,7 +5,7 @@
 namespace HtmlParser
 {
 
-class Attribute
+class HTML_PARSER_EXPORT Attribute
 {
 public:
 	Attribute() = default;

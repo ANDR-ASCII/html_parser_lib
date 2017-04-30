@@ -21,3 +21,13 @@
 }
 
 #define D_FUNCTION(ClassName) ClassName##Private* const m_d = d_function()
+
+#ifdef HTML_PARSER_LIBRARY
+
+#define HTML_PARSER_EXPORT __declspec(dllimport)
+
+#else
+
+#define HTML_PARSER_EXPORT __declspec(dllexport)
+
+#endif

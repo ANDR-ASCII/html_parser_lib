@@ -7,7 +7,7 @@ namespace HtmlParser
 
 class Attribute;
 
-class Tag
+class HTML_PARSER_EXPORT Tag
 {
 public:
 	const std::string& name() const;

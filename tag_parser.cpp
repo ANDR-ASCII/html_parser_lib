@@ -1,7 +1,9 @@
 #include "headers.h"
+#include "attribute.h"
+#include "tag.h"
 #include "tag_parser.h"
-#include "common.h"
 #include "tag_parser_private.h"
+#include "common.h"
 
 namespace HtmlParser
 {
@@ -19,7 +21,7 @@ TagParser::TagParser(const TagParser& parser)
 	m_inviteMode = parser.m_inviteMode;
 	clear();
 
-	const auto tagsNumber = parser.count();
+	const auto tagsNumber = parser.size();
 
 	for (auto i = 0ul; i < tagsNumber; ++i)
 	{
@@ -67,7 +69,7 @@ TagParser& TagParser::operator=(const TagParser& parser)
 	m_inviteMode = parser.m_inviteMode;
 	clear();
 
-	const auto tagsNumber = parser.count();
+	const auto tagsNumber = parser.size();
 
 	for (auto i = 0ul; i < tagsNumber; ++i)
 	{
@@ -137,7 +139,7 @@ void TagParser::parseTags(const std::string& htmlPage, const std::string& tagNam
 
 	// text of read the tag like this - tag [attribute1="value1" attribute2="value2"]
 	std::string tagText;
-	std::deque<Attribute> attributesOfNameTag;
+	std::deque<HtmlParser::Attribute> attributesOfNameTag;
 
 	// name of current read tag
 	std::string nameOfReadedTag, nameTagCmp = Common::strToLower(tagName);
@@ -180,7 +182,7 @@ void TagParser::parseTagsWithValue(const std::string& htmlPage, const std::strin
 	std::size_t position = 0, size = htmlPage.size();
 
 	std::string tagText, nameTagCmp = Common::strToLower(tagName);
-	std::deque<Attribute> attributesOfNameTag;
+	std::deque<HtmlParser::Attribute> attributesOfNameTag;
 
 	while (position < size)
 	{
