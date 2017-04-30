@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 2.8)
 set(BIN html_parser)
 project(${BIN})
 
-set(HEADERS_DIR ./)
-set(SOURCES_DIR ./)
+set(HEADERS_DIR ./include/)
+set(SOURCES_DIR ./src/)
 
 aux_source_directory(${SOURCES_DIR} SOURCES_LIST)
-file(GLOB_RECURSE HEADERS_LIST "./*.h")
+file(GLOB_RECURSE HEADERS_LIST "./include/*.h")
 
 # deps
 set(Boost_USE_STATIC_LIBS ON)
